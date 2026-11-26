@@ -1,0 +1,25 @@
+# Render Blueprint：把本文件放在仓库根目录，Render 可一键识别
+# 用法：Render 控制台 → New → Blueprint → 选择仓库
+services:
+  - type: web
+    name: seedbox
+    runtime: node
+    plan: free            # 需要持久化数据时改成 starter（$7/月）
+    region: singapore     # 国内访问较快；也可选 oregon / frankfurt
+    buildCommand: ""      # 零依赖，无需构建
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: ADMIN_PASSWORD     # 管理后台口令，首次部署前改成自己的
+        value: change-me-now
+      - key: PER_STAGE_QUOTA    # 每阶配额（六阶共 6×该值）
+        value: "12"
+      - key: TZ
+        value: Asia/Shanghai
+      - key: DATA_DIR           # 仅挂载磁盘时需要；配合下面的 disk 段
+        value: /var/data
+    # ↓ 持久磁盘：只有 starter 及以上套餐可用，取消注释并删掉上面的 plan: free
+    # disk:
+    #   name: seedbox-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

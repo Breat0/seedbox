@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>种子盲盒 · 抽一阶成长，讲一段故事</title>
+<style>
+  :root{
+    --green:#2E6B4F; --green-d:#1F4E38; --green-l:#4C8A69;
+    --gold:#D9A441; --gold-l:#EFC978; --cream:#FBF7EC; --ink:#2B2B2B;
+    --red:#B5342A; --grey:#8A8276;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:0;background:var(--cream);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:18px 18px 40px}
+  .brand{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-size:12px;letter-spacing:.5px;color:var(--green);opacity:.9;margin:6px 0 14px
+  }
+  .brand b{font-weight:600}
+  .hero{
+    text-align:center;margin:2px 0 18px
+  }
+  .hero h1{
+    font-size:30px;margin:0 0 8px;letter-spacing:4px;
+    font-family:"STKaiti","KaiTi","Songti SC",serif;color:var(--green-d)
+  }
+  .hero p{margin:0;font-size:13px;color:var(--grey);letter-spacing:1px}
+  .card{
+    background:#fff;border-radius:18px;padding:18px;
+    box-shadow:0 8px 24px rgba(46,107,79,.08);
+    border:1px solid rgba(217,164,65,.35)
+  }
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--grey);margin-bottom:6px;letter-spacing:.5px}
+  .field input{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid #E6DFCF;
+    background:#FDFBF4;font-size:15px;color:var(--ink);outline:none
+  }
+  .field input:focus{border-color:var(--gold);background:#fff}
+  .btn{
+    width:100%;border:none;border-radius:14px;padding:15px;font-size:17px;letter-spacing:2px;
+    background:linear-gradient(180deg,var(--green-l),var(--green-d));color:#FBF7EC;
+    font-weight:600;box-shadow:0 6px 16px rgba(31,78,56,.25);cursor:pointer
+  }
+  .btn:disabled{opacity:.6}
+  .btn.ghost{
+    background:#fff;color:var(--green-d);border:1px solid var(--gold);box-shadow:none
+  }
+  .hint{font-size:12px;color:var(--grey);text-align:center;margin-top:12px;line-height:1.7}
+  /* 抽签动画 */
+  .reel{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 10px}
+  .reel.on{display:grid}
+  .reel img{width:100%;border-radius:12px;opacity:.35;transition:opacity .08s,transform .08s}
+  .reel img.hot{opacity:1;transform:scale(1.04);box-shadow:0 4px 12px rgba(217,164,65,.45)}
+  /* 结果 */
+  .result{display:none}
+  .result.on{display:block;animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .result-img{width:100%;border-radius:16px;display:block}
+  .stage-name{
+    font-size:34px;letter-spacing:8px;text-align:center;margin:14px 0 4px;
+    font-family:"STKaiti","KaiTi","Songti SC",serif;color:var(--green-d)
+  }
+  .stage-tip{text-align:center;font-size:14px;color:#5C5548;margin:0 0 12px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
+  .tag{font-size:12px;padding:4px 10px;border-radius:999px;background:#F3EDDD;color:#8A6B22}
+  .seq{text-align:center;font-size:12px;color:var(--grey)}
+  .toast{
+    position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:rgba(43,43,43,.92);color:#fff;padding:12px 18px;border-radius:12px;
+    font-size:14px;max-width:80%;text-align:center;display:none;z-index:99;line-height:1.6
+  }
+  .toast.on{display:block}
+  .divider{height:1px;background:#EFE8D8;margin:14px 0}
+  .small{font-size:12px;color:var(--grey);line-height:1.8}
+  .empty{text-align:center;padding:20px 0}
+  .empty .em{font-size:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><b id="brandTitle">声耀七十载 · 金话颂北农</b></div>
+  <div class="hero">
+    <h1>种子盲盒</h1>
+    <p id="subtitle">抽一阶成长，讲一段故事</p>
+  </div>
+
+  <!-- 表单 -->
+  <div class="card" id="formCard">
+    <div class="field">
+      <label>姓名</label>
+      <input id="name" placeholder="请填写真实姓名" maxlength="20" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>学号</label>
+      <input id="sid" placeholder="用于防止重复抽取" maxlength="24" inputmode="numeric" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>班级（选填）</label>
+      <input id="cls" placeholder="如：园艺241" maxlength="24">
+    </div>
+    <button class="btn" id="drawBtn">拆 盲 盒</button>
+    <div class="hint">每人限拆一次 · 抽到哪一阶，就讲哪一段</div>
+  </div>
+
+  <!-- 动画 -->
+  <div class="reel" id="reel"></div>
+
+  <!-- 结果 -->
+  <div class="card result" id="resultCard">
+    <img class="result-img" id="rImg" alt="">
+    <div class="stage-name" id="rName">破土</div>
+    <p class="stage-tip" id="rTip"></p>
+    <div class="tags" id="rTags"></div>
+    <div class="seq" id="rSeq"></div>
+    <div class="divider"></div>
+    <div class="small">
+      · 抽签结果已同步到后台，签号一经抽出不换不退<br>
+      · 赛前可在本页「查看我的盲盒」再次打开
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn ghost" id="mineBtn">查看我的盲盒</button>
+    </div>
+  </div>
+
+  <!-- 已抽过 -->
+  <div class="card empty" id="dupCard" style="display:none">
+    <div class="em">🌱</div>
+    <p class="small">这位同学已经拆过盲盒了，下面是你的那一签。</p>
+    <button class="btn ghost" id="dupBtn">查看我的盲盒</button>
+  </div>
+
+  <!-- 抽完 -->
+  <div class="card empty" id="emptyCard" style="display:none">
+    <div class="em">🏺</div>
+    <p class="small">盲盒已经全部拆完啦。<br>请把签号告诉现场工作人员登记。</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var stages = [];
+  var busy = false;
+
+  function toast(msg, ms) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    setTimeout(function () { t.classList.remove('on'); }, ms || 2200);
+  }
+
+  function buildReel() {
+    var html = '';
+    for (var i = 1; i <= 6; i++) html += '<img id="reel' + i + '" src="/assets/stage-' + i + '.png" alt="">';
+    $('reel').innerHTML = html;
+  }
+  function startReel() {
+    $('reel').classList.add('on');
+    var i = 1, timer = setInterval(function () {
+      for (var k = 1; k <= 6; k++) $('reel' + k).classList.remove('hot');
+      $('reel' + i).classList.add('hot');
+      i = i % 6 + 1;
+    }, 110);
+    return timer;
+  }
+  function stopReel(timer) {
+    clearInterval(timer);
+    $('reel').classList.remove('on');
+  }
+
+  function showDraw(d) {
+    $('formCard').style.display = 'none';
+    $('dupCard').style.display = 'none';
+    $('reel').classList.remove('on');
+    $('rImg').src = d.img || ('/assets/stage-' + d.no + '.png');
+    $('rName').textContent = d.name;
+    $('rTip').textContent = d.tip || '';
+    $('rTags').innerHTML = (d.dirs || '').split('·').map(function (s) {
+      return '<span class="tag">' + s.trim() + '</span>';
+    }).join('');
+    $('rSeq').textContent = d.seq ? ('你是第 ' + d.seq + ' 位拆出「' + d.name + '」的同学 · 生长第 ' + d.step + ' 步') :
+      ('生长第 ' + d.step + ' 步 · 对应篇章【' + d.chapter + '】');
+    $('resultCard').classList.add('on');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showEmpty() {
+    $('formCard').style.display = 'none';
+    $('emptyCard').style.display = 'block';
+  }
+
+  function api(path, opt) {
+    return fetch(path, opt).then(function (r) {
+      return r.json().then(function (j) { return { status: r.status, body: j }; });
+    });
+  }
+
+  function draw() {
+    if (busy) return;
+    var name = $('name').value.trim();
+    var sid = $('sid').value.trim();
+    var cls = $('cls').value.trim();
+    if (!name) { toast('请先填写姓名'); return; }
+    if (!sid || sid.length < 4) { toast('请填写正确的学号'); return; }
+
+    busy = true;
+    $('drawBtn').disabled = true;
+    $('drawBtn').textContent = '拆盒中…';
+    var timer = startReel();
+    var t0 = Date.now();
+
+    api('/api/draw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, sid: sid, cls: cls })
+    }).then(function (res) {
+      var wait = Math.max(0, 1500 - (Date.now() - t0));
+      setTimeout(function () {
+        stopReel(timer);
+        busy = false;
+        $('drawBtn').disabled = false;
+        $('drawBtn').textContent = '拆 盲 盒';
+        if (res.status === 200 && res.body.ok) {
+          localStorage.setItem('seedbox_sid', sid);
+          showDraw(res.body.draw);
+          res.body.draw.seq = res.body.seq;
+          $('rSeq').textContent = '你是第 ' + res.body.seq + ' 位拆出「' + res.body.draw.name + '」的同学 · 生长第 ' + res.body.draw.step + ' 步';
+        } else if (res.status === 409) {
+          localStorage.setItem('seedbox_sid', sid);
+          showDraw(res.body.draw);
+          toast('你之前已经抽过了，这是你的签', 2600);
+        } else if (res.status === 410) {
+          showEmpty();
+        } else {
+          toast(res.body.error || '出了点问题，请重试');
+        }
+      }, wait);
+    }).catch(function () {
+      stopReel(timer);
+      busy = false;
+      $('drawBtn').disabled = false;
+      $('drawBtn').textContent = '拆 盲 盒';
+      toast('网络不太好，请再试一次');
+    });
+  }
+
+  function mine() {
+    var sid = localStorage.getItem('seedbox_sid') || $('sid').value.trim();
+    if (!sid) { toast('请先填写学号'); return; }
+    api('/api/mine?sid=' + encodeURIComponent(sid)).then(function (res) {
+      if (res.status === 200 && res.body.draw) showDraw(res.body.draw);
+      else toast('没有查到记录，请先在下方填写信息抽取');
+    }).catch(function () { toast('网络不太好，请再试一次'); });
+  }
+
+  buildReel();
+  $('drawBtn').addEventListener('click', draw);
+  $('mineBtn').addEventListener('click', mine);
+  $('dupBtn').addEventListener('click', function () {
+    $('dupCard').style.display = 'none';
+    $('formCard').style.display = 'block';
+    mine();
+  });
+
+  api('/api/info').then(function (res) {
+    if (res.status !== 200) return;
+    var info = res.body;
+    if (info.title) $('brandTitle').textContent = info.title;
+    if (info.subtitle) $('subtitle').textContent = info.subtitle;
+    var left = 0;
+    Object.keys(info.counts || {}).forEach(function (k) {
+      left += Math.max(0, info.quota - info.counts[k]);
+    });
+    if (left <= 0) showEmpty();
+  });
+})();
+</script>
+</body>
+</html>
