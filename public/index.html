@@ -101,8 +101,8 @@
       <input id="sid" placeholder="用于防止重复抽取" maxlength="24" inputmode="numeric" autocomplete="off">
     </div>
     <div class="field">
-      <label>班级（选填）</label>
-      <input id="cls" placeholder="如：园艺241" maxlength="24">
+      <label>班级（必填）</label>
+      <input id="cls" placeholder="学院+年级+专业+班级，如：国际学院25食品1班" maxlength="40">
     </div>
     <button class="btn" id="drawBtn">拆 盲 盒</button>
     <div class="hint">每人限拆一次 · 抽到哪一阶，就讲哪一段</div>
@@ -180,14 +180,17 @@
     $('formCard').style.display = 'none';
     $('dupCard').style.display = 'none';
     $('reel').classList.remove('on');
+    var stageName = d.name || '';
     $('rImg').src = d.img || ('/assets/stage-' + d.no + '.png');
-    $('rName').textContent = d.name;
+    $('rName').textContent = stageName;
     $('rTip').textContent = d.tip || '';
     $('rTags').innerHTML = (d.dirs || '').split('·').map(function (s) {
       return '<span class="tag">' + s.trim() + '</span>';
     }).join('');
-    $('rSeq').textContent = d.seq ? ('你是第 ' + d.seq + ' 位拆出「' + d.name + '」的同学 · 生长第 ' + d.step + ' 步') :
-      ('生长第 ' + d.step + ' 步 · 对应篇章【' + d.chapter + '】');
+    var who = d.player ? (d.player + '，') : '';
+    $('rSeq').textContent = d.seq
+      ? (who + '你是第 ' + d.seq + ' 位拆出「' + stageName + '」的同学 · 生长第 ' + d.step + ' 步')
+      : (who + '你抽到的是「' + stageName + '」 · 生长第 ' + d.step + ' 步 · 对应篇章【' + (d.chapter || '') + '】');
     $('resultCard').classList.add('on');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -210,6 +213,7 @@
     var cls = $('cls').value.trim();
     if (!name) { toast('请先填写姓名'); return; }
     if (!sid || sid.length < 4) { toast('请填写正确的学号'); return; }
+    if (!cls) { toast('请填写班级（学院+年级+专业+班级）'); return; }
 
     busy = true;
     $('drawBtn').disabled = true;
@@ -230,9 +234,9 @@
         $('drawBtn').textContent = '拆 盲 盒';
         if (res.status === 200 && res.body.ok) {
           localStorage.setItem('seedbox_sid', sid);
-          showDraw(res.body.draw);
-          res.body.draw.seq = res.body.seq;
-          $('rSeq').textContent = '你是第 ' + res.body.seq + ' 位拆出「' + res.body.draw.name + '」的同学 · 生长第 ' + res.body.draw.step + ' 步';
+          var dr = res.body.draw;
+          dr.seq = res.body.seq;
+          showDraw(dr);
         } else if (res.status === 409) {
           localStorage.setItem('seedbox_sid', sid);
           showDraw(res.body.draw);

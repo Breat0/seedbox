@@ -126,17 +126,18 @@ function normSid(s) { return String(s || '').trim().toUpperCase(); }
 function handleDraw(body, req) {
   const cfg = loadConfig();
   const draws = loadDraws();
-  const name = String(body.name || '').trim().slice(0, 20);
+  const player = String(body.name || '').trim().slice(0, 20);
   const sid = normSid(body.sid).slice(0, 24);
-  const cls = String(body.cls || '').trim().slice(0, 24);
+  const cls = String(body.cls || '').trim().slice(0, 40);
 
-  if (!name) return { code: 400, obj: { error: '请填写姓名' } };
+  if (!player) return { code: 400, obj: { error: '请填写姓名' } };
   if (!sid || sid.length < 4) return { code: 400, obj: { error: '请填写正确的学号（至少4位）' } };
+  if (!cls) return { code: 400, obj: { error: '请填写班级（学院+年级+专业+班级）' } };
 
   const dup = draws.find(d => normSid(d.sid) === sid);
   if (dup) {
-    const st = STAGES.find(s => s.no === dup.stage);
-    return { code: 409, obj: { error: 'duplicate', message: '你已经拆过盲盒了', draw: Object.assign({}, st, { ts: dup.ts }) } };
+    const st = STAGES.find(s => s.no === dup.stage) || {};
+    return { code: 409, obj: { error: 'duplicate', message: '你已经拆过盲盒了', draw: Object.assign({}, st, { ts: dup.ts, sid: dup.sid, cls: dup.cls, player: dup.name }) } };
   }
 
   const c = counts(draws);
@@ -147,7 +148,7 @@ function handleDraw(body, req) {
   const pick = pool[Math.floor(Math.random() * pool.length)];
   const rec = {
     id: draws.length + 1,
-    name, sid, cls,
+    name: player, sid, cls,
     stage: pick.no, stageName: pick.name, step: pick.step,
     ts: new Date().toISOString(),
     ip: (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim(),
@@ -159,7 +160,8 @@ function handleDraw(body, req) {
     code: 200, obj: {
       ok: true,
       seq: c[pick.no] + 1,
-      draw: Object.assign({}, pick, { ts: rec.ts, name, sid, cls })
+      // 阶段名在 draw.name 里，选手姓名单独放 player，避免同名覆盖
+      draw: Object.assign({}, pick, { ts: rec.ts, sid: rec.sid, cls: rec.cls, player })
     }
   };
 }
@@ -190,7 +192,7 @@ const server = http.createServer(async (req, res) => {
     const d = draws.find(x => normSid(x.sid) === sid);
     if (!d) return sendJson(res, 404, { error: 'notfound' });
     const st = STAGES.find(s => s.no === d.stage) || {};
-    return sendJson(res, 200, { draw: Object.assign({}, st, { ts: d.ts, name: d.name, sid: d.sid, cls: d.cls }) });
+    return sendJson(res, 200, { draw: Object.assign({}, st, { ts: d.ts, sid: d.sid, cls: d.cls, player: d.name }) });
   }
   if (p === '/api/admin/login' && req.method === 'POST') {
     const body = await readBody(req);
